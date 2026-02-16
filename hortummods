@@ -1,57 +1,45 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST PUSH V9 | STABLE",
-   LoadingTitle = "İtme Sistemi Yükleniyor...",
+   Name = "GHOST PUSH V11 | NO-SELF-FLING",
+   LoadingTitle = "Kararlı Sistem Yükleniyor...",
    LoadingSubtitle = "by serazs"
 })
 
 local LP = game.Players.LocalPlayer
-local flingActive = false
-local forceAmount = 15000 -- Burayı artırırsan daha uzağa gider
+local pushActive = false
+local power = 100 -- Işınlanma mesafesi (Yüksek olursa haritadan siler)
 
-local Tab = Window:CreateTab("İtme Modu", 4483345998)
+local Tab = Window:CreateTab("Sabit İtme", 4483345998)
 
 Tab:CreateToggle({
-   Name = "Dokunanı İt (Sen Sabit Kalırsın)",
+   Name = "İtme Modu (Kesin Sabit)",
    CurrentValue = false,
    Callback = function(Value)
-      flingActive = Value
+      pushActive = Value
    end,
 })
 
--- DOKUNMA MANTIĞI (SENİ ETKİLEMEZ)
-local function onTouch(hit)
-    if not flingActive then return end
-    
-    local char = LP.Character
-    if not char then return end
-    
-    -- Değen şey bir oyuncu modeli mi kontrol et
-    local model = hit:FindFirstAncestorOfClass("Model")
-    if model and model ~= char then
-        local hrp = model:FindFirstChild("HumanoidRootPart")
-        local hum = model:FindFirstChildOfClass("Humanoid")
+-- ANA DOKUNMA MOTORU (FIZIK KULLANMAZ, CFRAME KULLANIR)
+game:GetService("RunService").Stepped:Connect(function()
+    if pushActive then
+        local char = LP.Character
+        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
         
-        if hrp and hum then
-            -- Sadece karşıdaki adama kuvvet uygula
-            local direction = (hrp.Position - char.HumanoidRootPart.Position).Unit
-            hrp:ApplyImpulse((direction * forceAmount) + Vector3.new(0, forceAmount/2, 0))
-            
-            -- Bilgi mesajı
-            Rayfield:Notify({Title = "Hedef Uçuruldu!", Content = model.Name .. " fırlatıldı.", Duration = 2})
+        for _, player in pairs(game.Players:GetPlayers()) do
+            if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local targetHRP = player.Character.HumanoidRootPart
+                local dist = (targetHRP.Position - char.HumanoidRootPart.Position).Magnitude
+                
+                -- Eğer adam sana 5 birimden yakınsa (değiyorsa)
+                if dist < 5 then
+                    pcall(function()
+                        -- ADAMI İLERİ IŞINLAR (SEN SABİT KALIRSIN)
+                        local pushDir = (targetHRP.Position - char.HumanoidRootPart.Position).Unit
+                        targetHRP.CFrame = targetHRP.CFrame + (pushDir * power) + Vector3.new(0, power/2, 0)
+                    end)
+                end
+            end
         end
     end
-end
-
--- Karakterin parçalarına dokunma fonksiyonunu ekle
-local function setupTouch(character)
-    for _, part in pairs(character:GetChildren()) do
-        if part:IsA("BasePart") then
-            part.Touched:Connect(onTouch)
-        end
-    end
-end
-
-if LP.Character then setupTouch(LP.Character) end
-LP.CharacterAdded:Connect(setupTouch)
+end)
