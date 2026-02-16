@@ -1,24 +1,18 @@
+--[[ 
+    Super Ring Parts V4 - Cleaned & Optimized 
+    Trol mesajlar silindi, Xeno için hazırlandı.
+]]
+
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local LocalPlayer = Players.LocalPlayer
 local Workspace = game:GetService("Workspace")
 
-local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
-local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
-
-local Folder = Instance.new("Folder", Workspace)
-local Part = Instance.new("Part", Folder)
-local Attachment1 = Instance.new("Attachment", Part)
-Part.Anchored = true
-Part.CanCollide = false
-Part.Transparency = 1
-
--- NETWORK OWNERSHIP (DOKUNULMADI)
+-- NETWORK OWNERSHIP BYPASS (Parçaları kontrol etmek için şart)
 if not getgenv().Network then
     getgenv().Network = {
         BaseParts = {},
-        Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
+        Velocity = Vector3.new(14.46, 14.46, 14.46)
     }
 
     Network.RetainPart = function(Part)
@@ -29,78 +23,28 @@ if not getgenv().Network then
         end
     end
 
-    local function EnablePartControl()
-        LocalPlayer.ReplicationFocus = Workspace
-        RunService.Heartbeat:Connect(function()
-            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-            for _, Part in pairs(Network.BaseParts) do
-                if Part:IsDescendantOf(Workspace) then
-                    Part.Velocity = Network.Velocity
-                end
+    RunService.Heartbeat:Connect(function()
+        sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+        for _, Part in pairs(Network.BaseParts) do
+            if Part:IsDescendantOf(Workspace) then
+                Part.Velocity = Network.Velocity
             end
-        end)
-    end
-
-    EnablePartControl()
+        end
+    end)
 end
 
--- ORIJINAL GUI VE DÜĞMELER (DOKUNULMADI)
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SuperRingPartsGUI"
-ScreenGui.ResetOnSpawn = false
-ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 220, 0, 190)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -95)
-MainFrame.BackgroundColor3 = Color3.fromRGB(204, 0, 0)
-MainFrame.BorderSizePixel = 0
-MainFrame.Parent = ScreenGui
-
-local UICorner = Instance.new("UICorner")
-UICorner.CornerRadius = UDim.new(0, 20)
-UICorner.Parent = MainFrame
-
-local Title = Instance.new("TextLabel")
-Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "Super Ring Parts v4"
-Title.TextColor3 = Color3.fromRGB(153, 0, 0)
-Title.BackgroundColor3 = Color3.fromRGB(255, 51, 51)
-Title.Font = Enum.Font.Fondamento
-Title.TextSize = 22
-Title.Parent = MainFrame
-
-local ToggleButton = Instance.new("TextButton")
-ToggleButton.Size = UDim2.new(0.8, 0, 0, 35)
-ToggleButton.Position = UDim2.new(0.1, 0, 0.3, 0)
-ToggleButton.Text = "Ring Parts Off"
-ToggleButton.BackgroundColor3 = Color3.fromRGB(0, 0, 255)
-ToggleButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-ToggleButton.Font = Enum.Font.Fondamento
-ToggleButton.TextSize = 18
-ToggleButton.Parent = MainFrame
-
-local RadiusDisplay = Instance.new("TextLabel")
-RadiusDisplay.Size = UDim2.new(0.4, 0, 0, 35)
-RadiusDisplay.Position = UDim2.new(0.3, 0, 0.6, 0)
-RadiusDisplay.Text = "Radius: 50"
-RadiusDisplay.BackgroundColor3 = Color3.fromRGB(255, 0, 0)
-RadiusDisplay.TextColor3 = Color3.fromRGB(255, 255, 255)
-RadiusDisplay.Font = Enum.Font.Fondamento
-RadiusDisplay.TextSize = 18
-RadiusDisplay.Parent = MainFrame
-
--- ORIJINAL HORTUM MANTIĞI
+-- AYARLAR
 local radius = 50
 local height = 100
 local rotationSpeed = 1
 local attractionStrength = 1000
 local ringPartsEnabled = false
-
 local parts = {}
+
+-- PARÇA TOPLAMA FONKSİYONU
 local function addPart(part)
-    if part:IsA("BasePart") and not part.Anchored and part:IsDescendantOf(workspace) then
-        if part.Parent ~= LocalPlayer.Character and not part:IsDescendantOf(LocalPlayer.Character) then
+    if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(LocalPlayer.Character) then
+        if not table.find(parts, part) then
             table.insert(parts, part)
             part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
             part.CanCollide = false
@@ -111,35 +55,61 @@ end
 for _, part in pairs(workspace:GetDescendants()) do addPart(part) end
 workspace.DescendantAdded:Connect(addPart)
 
+-- ARAYÜZ (GUI)
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 220, 0, 150)
+MainFrame.Position = UDim2.new(0.5, -110, 0.5, -75)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Draggable = true
+MainFrame.Active = true
+
+local UICorner = Instance.new("UICorner", MainFrame)
+
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 40)
+Title.Text = "Super Ring V4"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+
+local ToggleBtn = Instance.new("TextButton", MainFrame)
+ToggleBtn.Size = UDim2.new(0.8, 0, 0, 40)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.35, 0)
+ToggleBtn.Text = "Hortum: KAPALI"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    ringPartsEnabled = not ringPartsEnabled
+    ToggleBtn.Text = ringPartsEnabled and "Hortum: AÇIK" or "Hortum: KAPALI"
+    ToggleBtn.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+end)
+
+local RadiusLabel = Instance.new("TextLabel", MainFrame)
+RadiusLabel.Size = UDim2.new(1, 0, 0, 30)
+RadiusLabel.Position = UDim2.new(0, 0, 0.7, 0)
+RadiusLabel.Text = "Mesafe: " .. radius
+RadiusLabel.TextColor3 = Color3.new(1, 1, 1)
+RadiusLabel.BackgroundTransparency = 1
+
+-- HORTUM MOTORU
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
     local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
     if hrp then
-        local tornadoCenter = hrp.Position
+        local center = hrp.Position
         for _, part in pairs(parts) do
             if part.Parent and not part.Anchored then
                 local pos = part.Position
-                local distance = (Vector3.new(pos.X, tornadoCenter.Y, pos.Z) - tornadoCenter).Magnitude
-                local angle = math.atan2(pos.Z - tornadoCenter.Z, pos.X - tornadoCenter.X)
+                local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
                 local newAngle = angle + math.rad(rotationSpeed)
                 local targetPos = Vector3.new(
-                    tornadoCenter.X + math.cos(newAngle) * math.min(radius, distance),
-                    tornadoCenter.Y + (height * (math.abs(math.sin((pos.Y - tornadoCenter.Y) / height)))),
-                    tornadoCenter.Z + math.sin(newAngle) * math.min(radius, distance)
+                    center.X + math.cos(newAngle) * radius,
+                    center.Y + (math.sin(tick()) * 5 + 5),
+                    center.Z + math.sin(newAngle) * radius
                 )
                 part.Velocity = (targetPos - part.Position).unit * attractionStrength
             end
         end
     end
 end)
-
--- DÜĞME ÇALIŞTIRMA
-ToggleButton.MouseButton1Click:Connect(function()
-    ringPartsEnabled = not ringPartsEnabled
-    ToggleButton.Text = ringPartsEnabled and "Ring Parts On" or "Ring Parts Off"
-    ToggleButton.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(50, 205, 50) or Color3.fromRGB(0, 0, 255)
-end)
-
--- SÜRÜKLEME ÖZELLİĞİ
-MainFrame.Active = true
-MainFrame.Draggable = true
