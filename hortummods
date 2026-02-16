@@ -1,25 +1,21 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST TORNADO V13 | FINAL",
-   LoadingTitle = "Sistem Kontrol Ediliyor...",
+   Name = "GHOST HUMAN TORNADO V15",
+   LoadingTitle = "ShadowMod Yükleniyor...",
    LoadingSubtitle = "by serazs"
 })
 
+-- DEĞİŞKENLER
 local LP = game.Players.LocalPlayer
 local RS = game:GetService("RunService")
 local tornadoActive = false
 local selectedVictim = ""
+local radius = 15
+local height = 10
+local speed = 5
 
--- GÖRÜNMEZ "İTİCİ" PARÇA (Hortumu bu yapacak)
-local SpinPart = Instance.new("Part")
-SpinPart.Name = "SpinPart"
-SpinPart.Size = Vector3.new(5, 5, 5)
-SpinPart.Transparency = 1
-SpinPart.CanCollide = false
-SpinPart.Anchored = false
- SpinPart.Parent = workspace
-
+-- OYUNCU LİSTESİ FONKSİYONU
 local function getPlayers()
     local p = {}
     for _, v in pairs(game.Players:GetPlayers()) do
@@ -28,40 +24,71 @@ local function getPlayers()
     return p
 end
 
-local Tab = Window:CreateTab("Hortum", 4483345998)
+local Tab = Window:CreateTab("Hortum Menüsü", 4483345998)
 
-local Drop = Tab:CreateDropdown({
-   Name = "Kurbanı Seç",
+-- KURBAN SEÇİMİ
+local Dropdown = Tab:CreateDropdown({
+   Name = "Hortumun Merkezi (Kurban)",
    Options = getPlayers(),
    CurrentOption = "",
-   Callback = function(Option) selectedVictim = Option end,
-})
-
-Tab:CreateToggle({
-   Name = "İnsanları Uçurmaya Başla",
-   CurrentValue = false,
-   Callback = function(Value) 
-      tornadoActive = Value 
-      if not Value then SpinPart.Velocity = Vector3.new(0,0,0) end
+   Callback = function(Option)
+      selectedVictim = Option
    end,
 })
 
--- ANA DÖNGÜ
-RS.Heartbeat:Connect(function()
+Tab:CreateButton({
+   Name = "Oyuncu Listesini Yenile",
+   Callback = function()
+      Dropdown:Refresh(getPlayers(), true)
+   end,
+})
+
+Tab:CreateSection("Kontroller")
+
+Tab:CreateToggle({
+   Name = "İnsan Hortumunu Başlat",
+   CurrentValue = false,
+   Callback = function(Value)
+      tornadoActive = Value
+   end,
+})
+
+Tab:CreateSlider({
+   Name = "Hortum Genişliği",
+   Min = 5,
+   Max = 50,
+   Default = 15,
+   Callback = function(Value) radius = Value end,
+})
+
+-- ANA MOTOR (SENİ ASLA FIRLATMAZ)
+RS.RenderStepped:Connect(function()
     if tornadoActive and selectedVictim ~= "" then
         local victim = game.Players:FindFirstChild(selectedVictim)
         if victim and victim.Character and victim.Character:FindFirstChild("HumanoidRootPart") then
-            local vRoot = victim.Character.HumanoidRootPart
+            local center = victim.Character.HumanoidRootPart.Position
             
-            -- Görünmez parça kurbanın etrafında dönerken başkalarına çarpar
-            local angle = tick() * 15
-            SpinPart.CFrame = vRoot.CFrame * CFrame.new(math.sin(angle) * 10, 0, math.cos(angle) * 10)
-            
-            -- Fiziksel güç uygulayarak "Fling" etkisi yaratır
-            SpinPart.Velocity = Vector3.new(5000, 5000, 5000)
-            SpinPart.RotVelocity = Vector3.new(5000, 5000, 5000)
+            for _, player in pairs(game.Players:GetPlayers()) do
+                -- Sen ve kurban hariç herkesi döndür
+                if player ~= LP and player.Name ~= selectedVictim and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                    pcall(function()
+                        local hrp = player.Character.HumanoidRootPart
+                        local angle = tick() * speed + (player.UserId * 0.5)
+                        
+                        -- CFrame kullanarak ışınlama (Fizik motoruna yük binmez, sen fırlamazsın)
+                        local targetPos = center + Vector3.new(
+                            math.sin(angle) * radius,
+                            math.cos(tick() * 2) * 2 + height, 
+                            math.cos(angle) * radius
+                        )
+                        
+                        hrp.CFrame = CFrame.new(targetPos, center)
+                        hrp.Velocity = Vector3.new(0, 0, 0) -- Diğer oyuncuların hızını sıfırla ki kaçamasınlar
+                    end)
+                end
+            end
         end
-    else
-        SpinPart.CFrame = CFrame.new(0, -100, 0) -- Kapalıyken yerin altına at
     end
 end)
+
+Rayfield:Notify({Title = "Hazır!", Content = "Kurbanı seç ve hortumu başlat kanka.", Duration = 5})
