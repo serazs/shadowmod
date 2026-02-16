@@ -1,0 +1,95 @@
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
+
+local Window = Rayfield:CreateWindow({
+   Name = "GHOST HUB V6 | TROLL EDITION",
+   LoadingTitle = "ShadowMod Yükleniyor...",
+   LoadingSubtitle = "by serazs",
+   ConfigurationSaving = {
+      Enabled = true,
+      FolderName = "GhostHubConfig",
+      FileName = "GhostHub"
+   }
+})
+
+-- VARIABLES
+local LP = game.Players.LocalPlayer
+local RunService = game:GetService("RunService")
+local tornadoActive = false
+local tornadoRadius = 15
+local tornadoSpeed = 8
+local tornadoHeight = 5
+
+-- TABS
+local MainTab = Window:CreateTab("Tornado & Physics", 4483345998) -- Icon ID
+
+-- SECTION
+local Section = MainTab:CreateSection("Hortum Kontrolü (FE)")
+
+-- TOGGLE: TORNADO
+MainTab:CreateToggle({
+   Name = "Hortumu Başlat (FE - Herkes Görür)",
+   CurrentValue = false,
+   Flag = "TornadoToggle",
+   Callback = function(Value)
+      tornadoActive = Value
+   end,
+})
+
+-- SLIDER: RADIUS
+MainTab:CreateSlider({
+   Name = "Hortum Genişliği",
+   Min = 5,
+   Max = 100,
+   Default = 15,
+   Color = Color3.fromRGB(255, 255, 255),
+   Increment = 1,
+   ValueName = "Genişlik",
+   Flag = "RadiusSlider",
+   Callback = function(Value)
+      tornadoRadius = Value
+   end,
+})
+
+-- BUTTON: REFRESH NETWORK
+MainTab:CreateButton({
+   Name = "Fizikleri Sahiplen (Refresh)",
+   Callback = function()
+      for _, part in pairs(workspace:GetDescendants()) do
+         if part:IsA("BasePart") and not part.Anchored then
+            pcall(function() part:SetNetworkOwner(LP) end)
+         end
+      end
+      Rayfield:Notify({Title = "Başarılı", Content = "Etraftaki eşyaların kontrolü alındı!", Duration = 3})
+   end,
+})
+
+-- TORNADO LOGIC
+RunService.Stepped:Connect(function()
+    if tornadoActive then
+        local char = LP.Character
+        if char and char:FindFirstChild("HumanoidRootPart") then
+            local rootPos = char.HumanoidRootPart.Position
+            
+            for _, part in pairs(workspace:GetDescendants()) do
+                if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(char) then
+                    pcall(function()
+                        -- Dönme açısı hesabı
+                        local angle = tick() * tornadoSpeed + (part.Position.Y * 0.3)
+                        local targetPos = rootPos + Vector3.new(
+                            math.sin(angle) * tornadoRadius,
+                            math.sin(tick() * 1.5) * tornadoHeight + 5,
+                            math.cos(angle) * tornadoRadius
+                        )
+                        
+                        -- Parçayı hareket ettir (Herkes görmesi için Velocity kullanımı)
+                        part.Velocity = (targetPos - part.Position) * 12
+                        -- Parçayı dik tutma efekti
+                        part.RotVelocity = Vector3.new(0, 10, 0)
+                    end)
+                end
+            end
+        end
+    end
+end)
+
+Rayfield:LoadConfiguration()
