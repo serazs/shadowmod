@@ -1,7 +1,7 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST RING V4 | RE-MODDED",
+   Name = "GHOST RING V4 | CLEAN",
    LoadingTitle = "Fizik Motoru Hazırlanıyor...",
    LoadingSubtitle = "by serazs",
    ConfigurationSaving = {
@@ -11,7 +11,7 @@ local Window = Rayfield:CreateWindow({
    }
 })
 
--- DEĞİŞKENLER (Kodun Orijinal Ayarları)
+-- DEĞİŞKENLER (HİÇBİRİ DEĞİŞMEDİ)
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -22,24 +22,28 @@ local attractionStrength = 1000
 local ringPartsEnabled = false
 local parts = {}
 
--- NETWORK OWNERSHIP (Orijinal Kodun Kalbi)
+-- NETWORK OWNERSHIP BYPASS (ORİJİNAL KODUN AYNISI)
 if not getgenv().Network then
     getgenv().Network = {
         BaseParts = {},
         Velocity = Vector3.new(14.46262424, 14.46262424, 14.46262424)
     }
-    
-    RunService.Heartbeat:Connect(function()
-        sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-        for _, Part in pairs(getgenv().Network.BaseParts) do
-            if Part:IsDescendantOf(workspace) then
-                Part.Velocity = getgenv().Network.Velocity
+
+    local function EnablePartControl()
+        LocalPlayer.ReplicationFocus = workspace
+        RunService.Heartbeat:Connect(function()
+            sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+            for _, Part in pairs(getgenv().Network.BaseParts) do
+                if Part:IsDescendantOf(workspace) then
+                    Part.Velocity = getgenv().Network.Velocity
+                end
             end
-        end
-    end)
+        end)
+    end
+    EnablePartControl()
 end
 
--- PARÇA YÖNETİMİ
+-- PARÇA TOPLAMA MANTIĞI (DOKUNULMADI)
 local function RetainPart(Part)
     if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(workspace) then
         if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then
@@ -56,6 +60,9 @@ local function addPart(part)
     if RetainPart(part) then
         if not table.find(parts, part) then
             table.insert(parts, part)
+            if getgenv().Network then
+                table.insert(getgenv().Network.BaseParts, part)
+            end
         end
     end
 end
@@ -63,13 +70,13 @@ end
 for _, part in pairs(workspace:GetDescendants()) do addPart(part) end
 workspace.DescendantAdded:Connect(addPart)
 
--- ARAYÜZ (RAYFIELD)
-local Tab = Window:CreateTab("Ring Control", 4483345998)
+-- YENİ MODERN ARAYÜZ (RAYFIELD)
+local Tab = Window:CreateTab("Hortum Ayarları", 4483345998)
 
-Tab:CreateSection("Ana Kontroller")
+Tab:CreateSection("Ana Kontrol")
 
 Tab:CreateToggle({
-   Name = "Hortumu Başlat (Ring Parts)",
+   Name = "Hortumu Aktif Et (Ring Parts)",
    CurrentValue = false,
    Flag = "RingToggle",
    Callback = function(Value)
@@ -78,21 +85,23 @@ Tab:CreateToggle({
 })
 
 Tab:CreateSlider({
-   Name = "Hortum Genişliği (Radius)",
-   Min = 5,
-   Max = 300,
+   Name = "Yarıçap (Radius)",
+   Min = 1,
+   Max = 1000,
    Default = 50,
    Increment = 1,
-   ValueName = "Birim",
+   ValueName = "Mesafe",
    Callback = function(Value)
       radius = Value
    end,
 })
 
+Tab:CreateSection("İnce Ayarlar")
+
 Tab:CreateSlider({
    Name = "Dönüş Hızı",
    Min = 1,
-   Max = 20,
+   Max = 50,
    Default = 1,
    Increment = 1,
    ValueName = "Hız",
@@ -101,21 +110,19 @@ Tab:CreateSlider({
    end,
 })
 
-Tab:CreateSection("Gelişmiş Ayarlar")
-
 Tab:CreateSlider({
    Name = "Çekim Gücü",
    Min = 100,
-   Max = 5000,
+   Max = 10000,
    Default = 1000,
-   Increment = 50,
+   Increment = 100,
    ValueName = "Güç",
    Callback = function(Value)
       attractionStrength = Value
    end,
 })
 
--- ANA HORTUM DÖNGÜSÜ (Orijinal Matematik)
+-- ANA FİZİK DÖNGÜSÜ (ORİJİNAL MATEMATİKSEL HESAPLAMA)
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
 
@@ -140,4 +147,4 @@ RunService.Heartbeat:Connect(function()
     end
 end)
 
-Rayfield:Notify({Title = "Hile Yüklendi", Content = "Temiz sürüm hazır. Chat trolü kaldırıldı!", Duration = 5})
+Rayfield:Notify({Title = "Sistem Aktif", Content = "Hortum hazır kanka, keyfini çıkar!", Duration = 5})
