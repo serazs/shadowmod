@@ -1,103 +1,68 @@
-local OrionLib = loadstring(game:HttpGet(('https://raw.githubusercontent.com/shlexware/Orion/main/source')))()
-
-local Window = OrionLib:MakeWindow({Name = "GHOST SAMURAI V2", HidePremium = false, SaveConfig = true, ConfigFolder = "OrionTest"})
-
--- SERVICES
+-- NO-LIBRARY STABLE SHADOW SCRIPT
+local LP = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
-local Players = game:GetService("Players")
-local LP = Players.LocalPlayer
-local Debris = game:GetService("Debris")
-
--- SETTINGS
 local ghostCopies = {}
-local copyAmount = 5
-local samuraiAnimId = "rbxassetid://657595757"
 
--- TABS
-local Tab = Window:MakeTab({
-	Name = "Shadow Samurai",
-	Icon = "rbxassetid://4483345998",
-	PremiumOnly = false
-})
+-- BASİT ARAYÜZ (KÜTÜPHANESİZ)
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 200, 0, 150)
+MainFrame.Position = UDim2.new(0.5, -100, 0.5, -75)
+MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
--- GHOST LOGIC
-local function spawnShadow()
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "GHOST SAMURAI V3"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+
+-- GÖLGE OLUŞTURMA
+local function spawnGhost()
     local char = LP.Character
-    if not char then return end
-
-    local ghost = Instance.new("Model", workspace)
-    ghost.Name = "Shadow_Samurai"
-    
-    for _, obj in pairs(char:GetChildren()) do
-        if obj:IsA("BasePart") then
-            local p = obj:Clone()
-            p.Parent = ghost
-            p.CanCollide = false
-            p.Anchored = true
-            p.Transparency = 0.6
-            p.Color = Color3.fromRGB(0, 0, 0)
-        elseif obj:IsA("Humanoid") then
-            local h = Instance.new("Humanoid", ghost)
-            local anim = Instance.new("Animation")
-            anim.AnimationId = samuraiAnimId
-            h:LoadAnimation(anim):Play()
-        end
+    if char and char:FindFirstChild("HumanoidRootPart") then
+        local ghost = Instance.new("Part", workspace)
+        ghost.Size = Vector3.new(4, 6, 1)
+        ghost.Color = Color3.new(0, 0, 0)
+        ghost.Transparency = 0.5
+        ghost.CanCollide = false
+        ghost.Anchored = true
+        ghost.Material = Enum.Material.Neon
+        table.insert(ghostCopies, ghost)
+        game:GetService("Debris"):AddItem(ghost, 10)
     end
-    
-    table.insert(ghostCopies, ghost)
-    Debris:AddItem(ghost, 12)
 end
 
--- CONTROLS
-Tab:AddSlider({
-	Name = "Gölge Sayısı",
-	Min = 1,
-	Max = 20,
-	Default = 5,
-	Color = Color3.fromRGB(255,255,255),
-	Increment = 1,
-	ValueName = "Samuray",
-	Callback = function(Value)
-		copyAmount = Value
-	end    
-})
+-- BUTONLAR
+local SpawnBtn = Instance.new("TextButton", MainFrame)
+SpawnBtn.Size = UDim2.new(0, 180, 0, 40)
+SpawnBtn.Position = UDim2.new(0, 10, 0, 40)
+SpawnBtn.Text = "Gölge Ordusu (Spawn)"
+SpawnBtn.MouseButton1Click:Connect(function()
+    for i = 1, 10 do spawnGhost() end
+end)
 
-Tab:AddButton({
-	Name = "Gölge Ordusunu Sal!",
-	Callback = function()
-        for i = 1, copyAmount do
-            spawnShadow()
-        end
-	end    
-})
+local AnimBtn = Instance.new("TextButton", MainFrame)
+AnimBtn.Size = UDim2.new(0, 180, 0, 40)
+AnimBtn.Position = UDim2.new(0, 10, 0, 90)
+AnimBtn.Text = "Samuray Yürüyüşü"
+AnimBtn.MouseButton1Click:Connect(function()
+    local hum = LP.Character:FindFirstChildOfClass("Humanoid")
+    local anim = Instance.new("Animation")
+    anim.AnimationId = "rbxassetid://657595757"
+    hum:LoadAnimation(anim):Play()
+end)
 
-Tab:AddToggle({
-	Name = "Samuray Yürüyüşü (Sen)",
-	Default = false,
-	Callback = function(Value)
-		local hum = LP.Character:FindFirstChildOfClass("Humanoid")
-        if Value then
-            local anim = Instance.new("Animation")
-            anim.AnimationId = samuraiAnimId
-            _G.SamuraiTrack = hum:LoadAnimation(anim)
-            _G.SamuraiTrack:Play()
-        else
-            if _G.SamuraiTrack then _G.SamuraiTrack:Stop() end
-        end
-	end    
-})
-
--- GÖLGELERİ ARKANDA TUTMA
+-- TAKİP SİSTEMİ
 RunService.Heartbeat:Connect(function()
     if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
-        local rootPos = LP.Character.HumanoidRootPart.Position
-        for i, ghost in pairs(ghostCopies) do
-            if ghost and ghost.PrimaryPart then
-                local offset = Vector3.new(math.sin(tick() + i)*8, -3, math.cos(tick() + i)*8)
-                ghost:SetPrimaryPartCFrame(CFrame.new(rootPos + offset))
+        local p = LP.Character.HumanoidRootPart.Position
+        for i, g in pairs(ghostCopies) do
+            if g and g.Parent then
+                local offset = Vector3.new(math.sin(tick()+i)*7, -2, math.cos(tick()+i)*7)
+                g.CFrame = CFrame.new(p + offset)
             end
         end
     end
 end)
-
-OrionLib:Init()
