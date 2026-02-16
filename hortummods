@@ -1,76 +1,57 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST FLING V8 | STABLE PRO",
-   LoadingTitle = "Fizik Motoru Hazırlanıyor...",
-   LoadingSubtitle = "by serazs",
-   ConfigurationSaving = {
-      Enabled = true,
-      FolderName = "GhostFling",
-      FileName = "FlingConfig"
-   }
+   Name = "GHOST PUSH V9 | STABLE",
+   LoadingTitle = "İtme Sistemi Yükleniyor...",
+   LoadingSubtitle = "by serazs"
 })
 
--- DEĞİŞKENLER
 local LP = game.Players.LocalPlayer
-local RS = game:GetService("RunService")
 local flingActive = false
-local power = 100000 -- Fırlatma gücü (Değen haritadan silinir)
+local forceAmount = 15000 -- Burayı artırırsan daha uzağa gider
 
--- GÖRÜNMEZ FLING PARÇASI OLUŞTURMA
-local FlingPart = Instance.new("Part")
-FlingPart.Name = "GhostFlingPart"
-FlingPart.Size = Vector3.new(6, 6, 6) -- Dokunma alanı (biraz genişlettim kanka)
-FlingPart.Transparency = 1 -- Görünmez
-FlingPart.CanCollide = false
-FlingPart.Anchored = false
-FlingPart.Parent = workspace
+local Tab = Window:CreateTab("İtme Modu", 4483345998)
 
--- MENÜ SEKMESİ
-local Tab = Window:CreateTab("Fling Modu", 4483345998)
-
-Tab:CreateSection("Ana Kontroller")
-
--- AÇMA KAPAMA DÜĞMESİ
 Tab:CreateToggle({
-   Name = "Fling Modu (Sen Sabit Kalırsın)",
+   Name = "Dokunanı İt (Sen Sabit Kalırsın)",
    CurrentValue = false,
-   Flag = "FlingToggle",
    Callback = function(Value)
       flingActive = Value
-      if not Value then
-          -- Kapandığında gücü sıfırla ve parçayı uzağa at
-          FlingPart.Velocity = Vector3.new(0, 0, 0)
-          FlingPart.RotVelocity = Vector3.new(0, 0, 0)
-          FlingPart.CFrame = CFrame.new(0, -500, 0)
-      end
    end,
 })
 
--- HORTUM/FLING MOTORU (DOKUNMA MANTIĞI)
-RS.Heartbeat:Connect(function()
-    if flingActive then
-        local char = LP.Character
-        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+-- DOKUNMA MANTIĞI (SENİ ETKİLEMEZ)
+local function onTouch(hit)
+    if not flingActive then return end
+    
+    local char = LP.Character
+    if not char then return end
+    
+    -- Değen şey bir oyuncu modeli mi kontrol et
+    local model = hit:FindFirstAncestorOfClass("Model")
+    if model and model ~= char then
+        local hrp = model:FindFirstChild("HumanoidRootPart")
+        local hum = model:FindFirstChildOfClass("Humanoid")
         
-        if hrp then
-            -- Görünmez parçayı senin gövdenin tam merkezine sabitler
-            FlingPart.CFrame = hrp.CFrame
+        if hrp and hum then
+            -- Sadece karşıdaki adama kuvvet uygula
+            local direction = (hrp.Position - char.HumanoidRootPart.Position).Unit
+            hrp:ApplyImpulse((direction * forceAmount) + Vector3.new(0, forceAmount/2, 0))
             
-            -- SADECE BU PARÇA DELİCE DÖNÜYOR (SEN SABİT KALIRSIN)
-            FlingPart.Velocity = Vector3.new(power, power, power)
-            FlingPart.RotVelocity = Vector3.new(power, power, power)
-            
-            -- Kendi karakterinin parçalara takılmasını engelle
-            for _, v in pairs(char:GetChildren()) do
-                if v:IsA("BasePart") then
-                    v.CanCollide = false
-                    v.Velocity = Vector3.new(0, 0, 0) -- Senin hızın 0 kalır!
-                    v.RotVelocity = Vector3.new(0, 0, 0)
-                end
-            end
+            -- Bilgi mesajı
+            Rayfield:Notify({Title = "Hedef Uçuruldu!", Content = model.Name .. " fırlatıldı.", Duration = 2})
         end
     end
-end)
+end
 
-Rayfield:Notify({Title = "Sistem Aktif", Content = "Birine dokun ve onun uçuşunu izle!", Duration = 5})
+-- Karakterin parçalarına dokunma fonksiyonunu ekle
+local function setupTouch(character)
+    for _, part in pairs(character:GetChildren()) do
+        if part:IsA("BasePart") then
+            part.Touched:Connect(onTouch)
+        end
+    end
+end
+
+if LP.Character then setupTouch(LP.Character) end
+LP.CharacterAdded:Connect(setupTouch)
