@@ -1,49 +1,17 @@
 -- SETTINGS
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
-local RunService = game:GetService("RunService")
 
 local flingActive = true
-local FORCE = 15000 -- fırlatma gücü
+local FORCE = 15000
 
--- CHARACTER SETUP
-local function setupChar(char)
-    local root = char:WaitForChild("HumanoidRootPart")
-
-    local function flingCharacter(otherChar)
-        local hrp = otherChar:FindFirstChild("HumanoidRootPart")
-        local hum = otherChar:FindFirstChildOfClass("Humanoid")
-        if hrp and hum and hum.Health > 0 then
-            local dir = (hrp.Position - root.Position).Unit
-            local mass = hrp.AssemblyMass
-            hrp:ApplyImpulse((dir * FORCE + Vector3.new(0, FORCE/2, 0)) * mass)
-        end
-    end
-
-    root.Touched:Connect(function(hit)
-        if not flingActive then return end
-        local model = hit:FindFirstAncestorOfClass("Model")
-        if model and model ~= char and Players:GetPlayerFromCharacter(model) then
-            flingCharacter(model)
-        end
-    end)
-end
-
--- INITIAL SETUP
-if lp.Character then
-    setupChar(lp.Character)
-end
-lp.CharacterAdded:Connect(setupChar)
-
-----------------------------------------------------
--- UI (CAM ARAYÜZ)
-----------------------------------------------------
+-- UI
 local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
 local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 180, 0, 60)
-MainFrame.Position = UDim2.new(0.5, -90, 0.4, 0)
+MainFrame.Size = UDim2.new(0, 200, 0, 70)
+MainFrame.Position = UDim2.new(0.5, -100, 0.4, 0)
 MainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
-MainFrame.BackgroundTransparency = 0.5 -- cam efekti
+MainFrame.BackgroundTransparency = 0.6
 MainFrame.Active = true
 MainFrame.Draggable = true
 MainFrame.BorderSizePixel = 0
@@ -51,13 +19,13 @@ MainFrame.BorderSizePixel = 0
 local Title = Instance.new("TextLabel", MainFrame)
 Title.Size = UDim2.new(1,0,0,20)
 Title.Position = UDim2.new(0,0,0,0)
-Title.Text = "FLING MOD"
 Title.BackgroundTransparency = 1
+Title.Text = "FLING MOD"
 Title.TextColor3 = Color3.new(1,1,1)
 Title.TextScaled = true
 
 local ToggleBtn = Instance.new("TextButton", MainFrame)
-ToggleBtn.Size = UDim2.new(0,160,0,30)
+ToggleBtn.Size = UDim2.new(0,180,0,30)
 ToggleBtn.Position = UDim2.new(0,10,0,25)
 ToggleBtn.Text = flingActive and "FLING: AÇIK" or "FLING: KAPALI"
 ToggleBtn.BackgroundColor3 = flingActive and Color3.fromRGB(0,150,0) or Color3.fromRGB(150,0,0)
@@ -68,3 +36,29 @@ ToggleBtn.MouseButton1Click:Connect(function()
     ToggleBtn.Text = flingActive and "FLING: AÇIK" or "FLING: KAPALI"
     ToggleBtn.BackgroundColor3 = flingActive and Color3.fromRGB(0,150,0) or Color3.fromRGB(150,0,0)
 end)
+
+-- MAIN FUNCTION
+local function setupFling(char)
+    local root = char:WaitForChild("HumanoidRootPart")
+
+    root.Touched:Connect(function(hit)
+        if not flingActive then return end
+
+        local model = hit:FindFirstAncestorOfClass("Model")
+        if model and model ~= char then
+            local hum = model:FindFirstChildOfClass("Humanoid")
+            local hrp = model:FindFirstChild("HumanoidRootPart")
+            if hum and hrp and hum.Health > 0 then
+                local dir = (hrp.Position - root.Position).Unit
+                local mass = hrp.AssemblyMass
+                hrp:ApplyImpulse((dir * FORCE + Vector3.new(0, FORCE/2, 0)) * mass)
+            end
+        end
+    end)
+end
+
+-- SETUP
+if lp.Character then
+    setupFling(lp.Character)
+end
+lp.CharacterAdded:Connect(setupFling)
