@@ -1,53 +1,52 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-
-local Window = Rayfield:CreateWindow({
-   Name = "GHOST HORTUM V5 | ANTI-BYPASS",
-   LoadingTitle = "Fizik Motoru Zorlanıyor...",
-   LoadingSubtitle = "by serazs"
-})
-
+-- SIMPLE FLING UI (V6)
 local LP = game.Players.LocalPlayer
-local RS = game:GetService("RunService")
-local tornadoActive = false
-local range = 500 -- Çok uzak parçalar yerine orta mesafe (daha stabil)
-local power = 50
+local RunService = game:GetService("RunService")
+local flingActive = false
 
-local Tab = Window:CreateTab("Force Tornado", 4483345998)
+-- BASİT ARAYÜZ
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+local MainFrame = Instance.new("Frame", ScreenGui)
+MainFrame.Size = UDim2.new(0, 180, 0, 80)
+MainFrame.Position = UDim2.new(0.5, -90, 0.4, 0)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.Active = true
+MainFrame.Draggable = true
 
-Tab:CreateToggle({
-   Name = "Hortumu Zorla (Aggressive)",
-   CurrentValue = false,
-   Callback = function(Value)
-      tornadoActive = Value
-   end,
-})
+local Title = Instance.new("TextLabel", MainFrame)
+Title.Size = UDim2.new(1, 0, 0, 25)
+Title.Text = "FLING MOD"
+Title.TextColor3 = Color3.new(1, 1, 1)
+Title.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
 
--- FİZİK MOTORUNU KANDIRMA DÖNGÜSÜ
-RS.Stepped:Connect(function()
-    if tornadoActive then
-        settings().Physics.AllowSleep = false -- Parçaların uyku moduna geçmesini engelle
+local ToggleBtn = Instance.new("TextButton", MainFrame)
+ToggleBtn.Size = UDim2.new(0, 160, 0, 40)
+ToggleBtn.Position = UDim2.new(0, 10, 0, 30)
+ToggleBtn.Text = "FLING: KAPALI"
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
+ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+
+ToggleBtn.MouseButton1Click:Connect(function()
+    flingActive = not flingActive
+    ToggleBtn.Text = flingActive and "FLING: AÇIK" or "FLING: KAPALI"
+    ToggleBtn.BackgroundColor3 = flingActive and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+end)
+
+-- FLING MOTORU
+RunService.Stepped:Connect(function()
+    if flingActive then
         local char = LP.Character
-        local root = char and char:FindFirstChild("HumanoidRootPart")
-        
-        if root then
-            for _, v in pairs(workspace:GetDescendants()) do
-                if v:IsA("BasePart") and not v.Anchored and not v:IsDescendantOf(char) then
-                    local dist = (v.Position - root.Position).Magnitude
-                    if dist < range then
-                        -- NETWORK OWNERSHIP ZORLAMA
-                        pcall(function()
-                            v:SetNetworkOwner(LP) -- Parçayı senin kontrolüne alır
-                            
-                            local angle = tick() * 12
-                            local targetPos = root.Position + Vector3.new(math.sin(angle) * 15, 5, math.cos(angle) * 15)
-                            
-                            -- BODY VELOCITY YERİNE DOĞRUDAN VELOCITY ATAMASI
-                            v.Velocity = (targetPos - v.Position).Unit * power
-                            v.RotVelocity = Vector3.new(0, 50, 0)
-                        end)
-                    end
+        local hrp = char and char:FindFirstChild("HumanoidRootPart")
+        if hrp then
+            -- Karakteri aşırı hızlı döndürerek temas ettiğini fırlatır
+            for _, v in pairs(char:GetChildren()) do
+                if v:IsA("BasePart") then
+                    v.CanCollide = false -- Takılmamak için içinden geçiyoruz
                 end
             end
+            
+            -- Fırlatma gücü: Dönüş ve hız kombinasyonu
+            hrp.Velocity = Vector3.new(0, 5000, 0) -- Havaya kalkmayı zorlar
+            hrp.RotVelocity = Vector3.new(0, 5000, 0) -- Delicesine döner
         end
     end
 end)
