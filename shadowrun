@@ -1,0 +1,125 @@
+-- KAVO UI LIBRARY
+local Kavo = loadstring(game:HttpGet("https://raw.githubusercontent.com/xHeptc/Kavo-UI-Library/main/source.lua"))()
+local Window = Kavo.CreateLib("GHOST SAMURAY TROLL V1", "Midnight")
+
+-- SERVICES
+local RunService = game:GetService("RunService")
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local Debris = game:GetService("Debris")
+
+-- SETTINGS
+local ghostCopies = {}
+local copyAmount = 5
+local animationId = "rbxassetid://507767351" -- Samuray Yürüme Animasyonu (Roblox'tan buldum)
+
+-- UI TAB
+local Tab = Window:NewTab("Trol & Animasyon")
+local GhostSection = Tab:NewSection("Gölge Samuraylar")
+
+-- GHOST COPY OLUŞTURMA FONKSİYONU
+local function createGhostCopy()
+    local char = LP.Character
+    if not char then return end
+
+    local ghost = char:Clone()
+    ghost.Name = LP.Name .. "'s Ghost"
+    ghost.Parent = workspace
+    
+    -- Fiziksel özellikleri kapat (Ghost gibi görünmesi için)
+    for _, part in pairs(ghost:GetDescendants()) do
+        if part:IsA("BasePart") then
+            part.CanCollide = false
+            part.CanQuery = false
+            part.Anchored = false
+            part.Transparency = 0.5 -- Yarı saydam
+            if part:IsA("MeshPart") or part:IsA("Part") then
+                part.Color = Color3.fromRGB(0, 200, 255) -- Mavi-cyan arası bir renk
+            end
+        end
+    end
+    
+    -- Animasyon Yükle ve Başlat
+    local hum = ghost:FindFirstChildOfClass("Humanoid")
+    if hum then
+        hum.WalkSpeed = char.Humanoid.WalkSpeed * 0.8 -- Biraz daha yavaş samuray gibi yürüsünler
+        local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator", hum)
+        local animTrack = animator:LoadAnimation(Instance.new("Animation", animator))
+        animTrack.AnimationId = animationId
+        animTrack:Play()
+    end
+    
+    table.insert(ghostCopies, ghost)
+    Debris:AddItem(ghost, 15) -- 15 saniye sonra yok et (performans için)
+end
+
+-- ANIMASYON YÜKLEME VE OYNATMA FONKSİYONU
+local function playSamuraiWalk()
+    local char = LP.Character
+    if char then
+        local hum = char:FindFirstChildOfClass("Humanoid")
+        if hum then
+            local animator = hum:FindFirstChildOfClass("Animator") or Instance.new("Animator", hum)
+            local anim = Instance.new("Animation")
+            anim.AnimationId = animationId
+            local animTrack = animator:LoadAnimation(anim)
+            animTrack.Priority = Enum.AnimationPriority.Movement -- Diğer animasyonları ezsin
+            animTrack:Play()
+        end
+    end
+end
+
+-- GHOST CONTROLS
+GhostSection:NewButton("Gölge Samurayları Çağır", "Etrafına kopyalarını yayar", function()
+    for i = 1, copyAmount do
+        createGhostCopy()
+    end
+end)
+
+GhostSection:NewSlider("Kopya Sayısı", "Kaç tane hayalet oluşsun", 15, 1, function(val)
+    copyAmount = val
+end)
+
+GhostSection:NewToggle("Samuray Yürüyüşü (Senin İçin)", "Karakterini samuray gibi yürütür", function(state)
+    if state then
+        playSamuraiWalk()
+    else
+        -- Varsayılan animasyona dön (Nasıl yapılacağı oyuna göre değişebilir)
+        -- En basit yol, karakteri resetlemek veya oyundaki default animasyonları tekrar yüklemek.
+        -- Şimdilik sadece durdurma eklendi
+        local char = LP.Character
+        if char then
+            local hum = char:FindFirstChildOfClass("Humanoid")
+            if hum then
+                for _, track in pairs(hum:FindFirstChildOfClass("Animator"):GetPlayingAnimationTracks()) do
+                    if track.AnimationId == animationId then
+                        track:Stop()
+                    end
+                end
+            end
+        end
+    end
+end)
+
+GhostSection:NewButton("Tüm Gölgeleri Temizle", "Oluşan hayaletleri siler", function()
+    for _, ghost in pairs(ghostCopies) do
+        if ghost and ghost.Parent then
+            ghost:Destroy()
+        end
+    end
+    ghostCopies = {}
+end)
+
+-- PLAYER'IN HAREKETİNİ GHOST'LARA KOPYALAMA (BASİT)
+RunService.Heartbeat:Connect(function()
+    if LP.Character and LP.Character:FindFirstChild("HumanoidRootPart") then
+        local rootPos = LP.Character.HumanoidRootPart.Position
+        for _, ghost in pairs(ghostCopies) do
+            if ghost and ghost.Parent and ghost:FindFirstChild("HumanoidRootPart") then
+                -- Ghost'ları rastgele etrafa dağıt
+                local randomOffset = Vector3.new(math.random(-10, 10), 0, math.random(-10, 10))
+                ghost.HumanoidRootPart.CFrame = CFrame.new(rootPos + randomOffset)
+            end
+        end
+    end
+end)
