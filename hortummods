@@ -1,42 +1,92 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 local Window = Rayfield:CreateWindow({
-   Name = "GHOST PUSH V11 | NO-SELF-FLING",
-   LoadingTitle = "Kararlı Sistem Yükleniyor...",
+   Name = "GHOST HUMAN TORNADO V12",
+   LoadingTitle = "İnsan Hortumu Hazırlanıyor...",
    LoadingSubtitle = "by serazs"
 })
 
+-- DEĞİŞKENLER
 local LP = game.Players.LocalPlayer
-local pushActive = false
-local power = 100 -- Işınlanma mesafesi (Yüksek olursa haritadan siler)
+local RS = game:GetService("RunService")
+local tornadoActive = false
+local selectedVictim = ""
+local radius = 15
+local speed = 8
 
-local Tab = Window:CreateTab("Sabit İtme", 4483345998)
+-- OYUNCU LİSTESİNİ ALMA
+local function getPlayerNames()
+    local names = {}
+    for _, p in pairs(game.Players:GetPlayers()) do
+        if p ~= LP then
+            table.insert(names, p.Name)
+        end
+    end
+    return names
+end
 
-Tab:CreateToggle({
-   Name = "İtme Modu (Kesin Sabit)",
-   CurrentValue = false,
-   Callback = function(Value)
-      pushActive = Value
+local Tab = Window:CreateTab("Hortum Kontrol", 4483345998)
+
+Tab:CreateSection("Kurban Seçimi")
+
+local Dropdown = Tab:CreateDropdown({
+   Name = "Hortumun Odaklanacağı Kişi",
+   Options = getPlayerNames(),
+   CurrentOption = "",
+   Flag = "VictimDropdown",
+   Callback = function(Option)
+      selectedVictim = Option
    end,
 })
 
--- ANA DOKUNMA MOTORU (FIZIK KULLANMAZ, CFRAME KULLANIR)
-game:GetService("RunService").Stepped:Connect(function()
-    if pushActive then
-        local char = LP.Character
-        if not char or not char:FindFirstChild("HumanoidRootPart") then return end
-        
-        for _, player in pairs(game.Players:GetPlayers()) do
-            if player ~= LP and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
-                local targetHRP = player.Character.HumanoidRootPart
-                local dist = (targetHRP.Position - char.HumanoidRootPart.Position).Magnitude
-                
-                -- Eğer adam sana 5 birimden yakınsa (değiyorsa)
-                if dist < 5 then
+-- LİSTEYİ YENİLEME BUTONU
+Tab:CreateButton({
+   Name = "Oyuncu Listesini Yenile",
+   Callback = function()
+      Dropdown:Refresh(getPlayerNames(), true)
+   end,
+})
+
+Tab:CreateSection("Hortum Ayarları")
+
+Tab:CreateToggle({
+   Name = "İnsan Hortumunu Başlat (FE)",
+   CurrentValue = false,
+   Callback = function(Value)
+      tornadoActive = Value
+   end,
+})
+
+Tab:CreateSlider({
+   Name = "Dönüş Hızı",
+   Min = 1,
+   Max = 20,
+   Default = 8,
+   Callback = function(Value) speed = Value end,
+})
+
+-- ANA MOTOR: CFRAME IŞINLAMA (SEN ASLA FIRLAMAZSIN)
+RS.Stepped:Connect(function()
+    if tornadoActive and selectedVictim ~= "" then
+        local victimPlayer = game.Players:FindFirstChild(selectedVictim)
+        if victimPlayer and victimPlayer.Character and victimPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            local centerPos = victimPlayer.Character.HumanoidRootPart.Position
+            
+            for _, player in pairs(game.Players:GetPlayers()) do
+                -- Kendini ve kurbanı hortumdan muaf tut
+                if player ~= LP and player.Name ~= selectedVictim and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
                     pcall(function()
-                        -- ADAMI İLERİ IŞINLAR (SEN SABİT KALIRSIN)
-                        local pushDir = (targetHRP.Position - char.HumanoidRootPart.Position).Unit
-                        targetHRP.CFrame = targetHRP.CFrame + (pushDir * power) + Vector3.new(0, power/2, 0)
+                        local targetHRP = player.Character.HumanoidRootPart
+                        local angle = tick() * speed + (player.UserId * 0.1) -- Herkes farklı noktada döner
+                        
+                        -- Yeni pozisyon hesabı (CFrame ışınlama)
+                        local targetPos = centerPos + Vector3.new(
+                            math.sin(angle) * radius,
+                            math.sin(tick() * 2) * 5 + 10, -- Havada dalgalanma
+                            math.cos(angle) * radius
+                        )
+                        
+                        targetHRP.CFrame = CFrame.new(targetPos, centerPos)
                     end)
                 end
             end
