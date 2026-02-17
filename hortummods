@@ -320,4 +320,4 @@ local function SendChatMessage(msg)
     end
 end
 
-SendChatMessage("ring loaded")
+SendChatMessage("I am gay")
