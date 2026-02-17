@@ -32,7 +32,7 @@ end)
 --------------------------------------------------
 local Folder = Instance.new("Folder", Workspace)
 local Part = Instance.new("Part", Folder)
-local Attachment1 = Instance.new("Attachment", Part)
+Instance.new("Attachment", Part)
 
 Part.Anchored = true
 Part.CanCollide = false
@@ -56,12 +56,21 @@ Network.RetainPart = function(part)
     end
 end
 
+--------------------------------------------------
+-- RING STATE
+--------------------------------------------------
+local ringEnabled = false
+
 RunService.Heartbeat:Connect(function()
+
     sethiddenproperty(LocalPlayer,"SimulationRadius",math.huge)
 
-    for _,p in pairs(Network.BaseParts) do
-        if p:IsDescendantOf(Workspace) then
-            p.Velocity = Network.Velocity
+    -- SADECE ring kapalıyken network velocity ver
+    if not ringEnabled then
+        for _,p in pairs(Network.BaseParts) do
+            if p:IsDescendantOf(Workspace) then
+                p.Velocity = Network.Velocity
+            end
         end
     end
 end)
@@ -129,30 +138,6 @@ ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 16
 ToggleButton.Parent = MainFrame
 
-local DecreaseRadius = Instance.new("TextButton")
-DecreaseRadius.Size = UDim2.new(0.2,0,0,35)
-DecreaseRadius.Position = UDim2.new(0.1,0,0.6,0)
-DecreaseRadius.Text = "<"
-DecreaseRadius.BackgroundColor3 = Color3.fromRGB(30,30,30)
-DecreaseRadius.TextColor3 = Color3.new(1,1,1)
-DecreaseRadius.Parent = MainFrame
-
-local IncreaseRadius = Instance.new("TextButton")
-IncreaseRadius.Size = UDim2.new(0.2,0,0,35)
-IncreaseRadius.Position = UDim2.new(0.7,0,0.6,0)
-IncreaseRadius.Text = ">"
-IncreaseRadius.BackgroundColor3 = Color3.fromRGB(30,30,30)
-IncreaseRadius.TextColor3 = Color3.new(1,1,1)
-IncreaseRadius.Parent = MainFrame
-
-local RadiusDisplay = Instance.new("TextLabel")
-RadiusDisplay.Size = UDim2.new(0.4,0,0,35)
-RadiusDisplay.Position = UDim2.new(0.3,0,0.6,0)
-RadiusDisplay.Text = "Radius: 50"
-RadiusDisplay.BackgroundColor3 = Color3.fromRGB(20,20,20)
-RadiusDisplay.TextColor3 = Color3.new(1,1,1)
-RadiusDisplay.Parent = MainFrame
-
 --------------------------------------------------
 -- DRAG
 --------------------------------------------------
@@ -195,12 +180,11 @@ UserInputService.InputChanged:Connect(function(input)
 end)
 
 --------------------------------------------------
--- RING SYSTEM (GERÇEK DÖNEN HORTUM)
+-- RING SYSTEM 🌪️
 --------------------------------------------------
 local radius = 50
 local height = 60
-local strength = 1500
-local ringEnabled = false
+local strength = 2500
 
 local parts = {}
 
@@ -226,12 +210,12 @@ RunService.Heartbeat:Connect(function()
     if not humanoidRootPart then return end
 
     local center = humanoidRootPart.Position
-    local spin = tick() * 3
+    local spin = tick() * 4
 
     for i,part in pairs(parts) do
         if part.Parent then
 
-            local angle = spin + (i * 0.5)
+            local angle = spin + (i * 0.4)
 
             local target = Vector3.new(
                 center.X + math.cos(angle) * radius,
@@ -243,11 +227,10 @@ RunService.Heartbeat:Connect(function()
             part.Velocity = dir * strength
         end
     end
-
 end)
 
 --------------------------------------------------
--- BUTTONS
+-- BUTTON
 --------------------------------------------------
 ToggleButton.MouseButton1Click:Connect(function()
 
@@ -262,16 +245,6 @@ ToggleButton.MouseButton1Click:Connect(function()
         or Color3.fromRGB(30,30,30)
 
     playSound("12221967")
-end)
-
-DecreaseRadius.MouseButton1Click:Connect(function()
-    radius = math.max(5, radius - 5)
-    RadiusDisplay.Text = "Radius: "..radius
-end)
-
-IncreaseRadius.MouseButton1Click:Connect(function()
-    radius = math.min(300, radius + 5)
-    RadiusDisplay.Text = "Radius: "..radius
 end)
 
 --------------------------------------------------
