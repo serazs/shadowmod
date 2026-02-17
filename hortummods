@@ -341,7 +341,7 @@ end)
 -- Get player thumbnail
 local function getThumbnail()
     local success, userId = pcall(function()
-        return Players:GetUserIdFromNameAsync("Robloxlukasgames")
+        return Players:GetUserIdFromNameAsync("XENO worked")
     end)
     
     if success then
@@ -372,4 +372,4 @@ local function SendChatMessage(message)
     end
 end
 
-SendChatMessage("Super Ring Parts V4 By lukas")
+SendChatMessage("merte pompa")
