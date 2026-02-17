@@ -1,4 +1,10 @@
 --------------------------------------------------
+-- RESET GLOBAL
+--------------------------------------------------
+getgenv().Network = nil
+
+
+--------------------------------------------------
 -- SERVICES
 --------------------------------------------------
 local Players = game:GetService("Players")
@@ -13,14 +19,19 @@ local LocalPlayer = Players.LocalPlayer
 
 
 --------------------------------------------------
--- CHARACTER
+-- CHARACTER SYSTEM
 --------------------------------------------------
 local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
 
+LocalPlayer.CharacterAdded:Connect(function(char)
+    character = char
+    humanoidRootPart = char:WaitForChild("HumanoidRootPart")
+end)
+
 
 --------------------------------------------------
--- NETWORK / PART CONTROL SYSTEM
+-- NETWORK SYSTEM (STRONG CONTROL)
 --------------------------------------------------
 local Folder = Instance.new("Folder", Workspace)
 local Part = Instance.new("Part", Folder)
@@ -30,52 +41,47 @@ Part.Anchored = true
 Part.CanCollide = false
 Part.Transparency = 1
 
-if not getgenv().Network then
-    getgenv().Network = {
-        BaseParts = {},
-        Velocity = Vector3.new(14.46262424,14.46262424,14.46262424)
-    }
+getgenv().Network = {
+    BaseParts = {},
+    Velocity = Vector3.new(30,30,30)
+}
 
-    Network.RetainPart = function(Part)
-        if typeof(Part) == "Instance"
-        and Part:IsA("BasePart")
-        and Part:IsDescendantOf(Workspace) then
+local Network = getgenv().Network
 
-            table.insert(Network.BaseParts, Part)
-            Part.CustomPhysicalProperties = PhysicalProperties.new(0,0,0,0,0)
-            Part.CanCollide = false
-        end
+Network.RetainPart = function(part)
+    if typeof(part) == "Instance"
+    and part:IsA("BasePart")
+    and part:IsDescendantOf(Workspace) then
+
+        table.insert(Network.BaseParts, part)
+        part.CustomPhysicalProperties = PhysicalProperties.new(0,0,0,0,0)
+        part.CanCollide = false
     end
-
-    local function EnablePartControl()
-        LocalPlayer.ReplicationFocus = Workspace
-
-        RunService.Heartbeat:Connect(function()
-            sethiddenproperty(LocalPlayer,"SimulationRadius",math.huge)
-
-            for _,Part in pairs(Network.BaseParts) do
-                if Part:IsDescendantOf(Workspace) then
-                    Part.Velocity = Network.Velocity
-                end
-            end
-        end)
-    end
-
-    EnablePartControl()
 end
 
 
---------------------------------------------------
--- SOUND SYSTEM
---------------------------------------------------
-local function playSound(soundId)
-    local sound = Instance.new("Sound")
-    sound.SoundId = "rbxassetid://"..soundId
-    sound.Parent = SoundService
-    sound:Play()
+RunService.Heartbeat:Connect(function()
 
-    sound.Ended:Connect(function()
-        sound:Destroy()
+    sethiddenproperty(LocalPlayer,"SimulationRadius",math.huge)
+
+    for _,p in pairs(Network.BaseParts) do
+        if p:IsDescendantOf(Workspace) then
+            p.Velocity = Network.Velocity
+        end
+    end
+end)
+
+
+--------------------------------------------------
+-- SOUND
+--------------------------------------------------
+local function playSound(id)
+    local s = Instance.new("Sound")
+    s.SoundId = "rbxassetid://"..id
+    s.Parent = SoundService
+    s:Play()
+    s.Ended:Connect(function()
+        s:Destroy()
     end)
 end
 
@@ -83,26 +89,17 @@ playSound("2865227271")
 
 
 --------------------------------------------------
--- GUI SYSTEM
+-- GUI (BLACK RGB)
 --------------------------------------------------
---------------------------------------------------
--- GUI SYSTEM (BLACK RGB SQUARE)
---------------------------------------------------
-
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "SuperRingPartsGUI"
-ScreenGui.ResetOnSpawn = false
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
--- RGB BORDER FRAME
 local Border = Instance.new("Frame")
 Border.Size = UDim2.new(0,230,0,200)
 Border.Position = UDim2.new(0.5,-115,0.5,-100)
-Border.BackgroundColor3 = Color3.fromRGB(255,0,0)
 Border.BorderSizePixel = 0
 Border.Parent = ScreenGui
 
--- MAIN FRAME (BLACK)
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(1,-4,1,-4)
 MainFrame.Position = UDim2.new(0,2,0,2)
@@ -111,60 +108,45 @@ MainFrame.BorderSizePixel = 0
 MainFrame.Parent = Border
 
 
---------------------------------------------------
--- RGB ANIMATION
---------------------------------------------------
+-- RGB BORDER
 task.spawn(function()
-    local hue = 0
+    local h = 0
     while true do
-        hue += 0.01
-        if hue > 1 then
-            hue = 0
-        end
-        Border.BackgroundColor3 = Color3.fromHSV(hue,1,1)
+        h += 0.01
+        if h > 1 then h = 0 end
+        Border.BackgroundColor3 = Color3.fromHSV(h,1,1)
         task.wait(0.03)
     end
 end)
 
 
---------------------------------------------------
--- TITLE
---------------------------------------------------
 local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1,0,0,40)
-Title.Text = "Super Ring Parts v4"
-Title.TextColor3 = Color3.fromRGB(255,255,255)
+Title.Text = "Super Ring Parts"
+Title.TextColor3 = Color3.new(1,1,1)
 Title.BackgroundColor3 = Color3.fromRGB(20,20,20)
 Title.Font = Enum.Font.GothamBold
 Title.TextSize = 20
 Title.Parent = MainFrame
 
 
---------------------------------------------------
--- TOGGLE BUTTON
---------------------------------------------------
 local ToggleButton = Instance.new("TextButton")
 ToggleButton.Size = UDim2.new(0.8,0,0,35)
 ToggleButton.Position = UDim2.new(0.1,0,0.3,0)
 ToggleButton.Text = "Ring Parts Off"
 ToggleButton.BackgroundColor3 = Color3.fromRGB(30,30,30)
-ToggleButton.TextColor3 = Color3.fromRGB(255,255,255)
+ToggleButton.TextColor3 = Color3.new(1,1,1)
 ToggleButton.Font = Enum.Font.GothamBold
 ToggleButton.TextSize = 16
 ToggleButton.Parent = MainFrame
 
 
---------------------------------------------------
--- RADIUS BUTTONS
---------------------------------------------------
 local DecreaseRadius = Instance.new("TextButton")
 DecreaseRadius.Size = UDim2.new(0.2,0,0,35)
 DecreaseRadius.Position = UDim2.new(0.1,0,0.6,0)
 DecreaseRadius.Text = "<"
 DecreaseRadius.BackgroundColor3 = Color3.fromRGB(30,30,30)
-DecreaseRadius.TextColor3 = Color3.fromRGB(255,255,255)
-DecreaseRadius.Font = Enum.Font.GothamBold
-DecreaseRadius.TextSize = 16
+DecreaseRadius.TextColor3 = Color3.new(1,1,1)
 DecreaseRadius.Parent = MainFrame
 
 
@@ -173,28 +155,21 @@ IncreaseRadius.Size = UDim2.new(0.2,0,0,35)
 IncreaseRadius.Position = UDim2.new(0.7,0,0.6,0)
 IncreaseRadius.Text = ">"
 IncreaseRadius.BackgroundColor3 = Color3.fromRGB(30,30,30)
-IncreaseRadius.TextColor3 = Color3.fromRGB(255,255,255)
-IncreaseRadius.Font = Enum.Font.GothamBold
-IncreaseRadius.TextSize = 16
+IncreaseRadius.TextColor3 = Color3.new(1,1,1)
 IncreaseRadius.Parent = MainFrame
 
 
---------------------------------------------------
--- RADIUS DISPLAY
---------------------------------------------------
 local RadiusDisplay = Instance.new("TextLabel")
 RadiusDisplay.Size = UDim2.new(0.4,0,0,35)
 RadiusDisplay.Position = UDim2.new(0.3,0,0.6,0)
 RadiusDisplay.Text = "Radius: 50"
 RadiusDisplay.BackgroundColor3 = Color3.fromRGB(20,20,20)
-RadiusDisplay.TextColor3 = Color3.fromRGB(255,255,255)
-RadiusDisplay.Font = Enum.Font.GothamBold
-RadiusDisplay.TextSize = 16
+RadiusDisplay.TextColor3 = Color3.new(1,1,1)
 RadiusDisplay.Parent = MainFrame
 
 
 --------------------------------------------------
--- GUI DRAG SYSTEM
+-- DRAG
 --------------------------------------------------
 local dragging, dragInput, dragStart, startPos
 
@@ -236,35 +211,113 @@ end)
 
 
 --------------------------------------------------
--- NOTIFICATION SYSTEM
+-- RING SYSTEM
+--------------------------------------------------
+local radius = 50
+local height = 60
+local strength = 1500
+local ringEnabled = false
+
+local parts = {}
+
+local function addPart(part)
+
+    if part:IsA("BasePart")
+    and not part.Anchored
+    and not part:IsDescendantOf(LocalPlayer.Character) then
+
+        table.insert(parts, part)
+        Network.RetainPart(part)
+    end
+end
+
+
+for _,p in pairs(Workspace:GetDescendants()) do
+    addPart(p)
+end
+
+Workspace.DescendantAdded:Connect(addPart)
+
+
+RunService.Heartbeat:Connect(function()
+
+    if not ringEnabled then return end
+    if not humanoidRootPart then return end
+
+    local center = humanoidRootPart.Position
+
+    for _,part in pairs(parts) do
+
+        if part.Parent then
+
+            local pos = part.Position
+            local angle = math.atan2(pos.Z-center.Z,pos.X-center.X)
+
+            local target = Vector3.new(
+                center.X + math.cos(angle)*radius,
+                center.Y + math.random(-height,height),
+                center.Z + math.sin(angle)*radius
+            )
+
+            local dir = (target - pos).Unit
+            part.Velocity = dir * strength
+        end
+    end
+
+end)
+
+
+--------------------------------------------------
+-- BUTTONS
+--------------------------------------------------
+ToggleButton.MouseButton1Click:Connect(function()
+
+    ringEnabled = not ringEnabled
+
+    ToggleButton.Text =
+        ringEnabled and "Ring Parts On"
+        or "Ring Parts Off"
+
+    ToggleButton.BackgroundColor3 =
+        ringEnabled and Color3.fromRGB(0,170,0)
+        or Color3.fromRGB(30,30,30)
+
+    playSound("12221967")
+end)
+
+
+DecreaseRadius.MouseButton1Click:Connect(function()
+    radius = math.max(5, radius - 5)
+    RadiusDisplay.Text = "Radius: "..radius
+end)
+
+IncreaseRadius.MouseButton1Click:Connect(function()
+    radius = math.min(300, radius + 5)
+    RadiusDisplay.Text = "Radius: "..radius
+end)
+
+
+--------------------------------------------------
+-- NOTIFICATION
 --------------------------------------------------
 StarterGui:SetCore("SendNotification",{
-    Title = "merte pompik mod",
-    Text = "enjoy",
+    Title = "Ring Script",
+    Text = "Loaded Successfully",
     Duration = 5
 })
 
 
 --------------------------------------------------
--- CHAT SYSTEM
+-- CHAT
 --------------------------------------------------
-local function SendChatMessage(message)
+local function SendChatMessage(msg)
 
     if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
-
-        local textChannel =
-            TextChatService.TextChannels.RBXGeneral
-
-        textChannel:SendAsync(message)
-
+        TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
     else
-
-        game:GetService("ReplicatedStorage")
-        .DefaultChatSystemChatEvents
-        .SayMessageRequest
-        :FireServer(message,"All")
-
+        game.ReplicatedStorage.DefaultChatSystemChatEvents
+        .SayMessageRequest:FireServer(msg,"All")
     end
 end
 
-SendChatMessage("merte pompik")
+SendChatMessage("ring loaded")
