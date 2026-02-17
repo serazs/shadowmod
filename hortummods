@@ -17,7 +17,7 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 
 --------------------------------------------------
--- CHARACTER SYSTEM
+-- CHARACTER
 --------------------------------------------------
 local character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 local humanoidRootPart = character:WaitForChild("HumanoidRootPart")
@@ -28,7 +28,7 @@ LocalPlayer.CharacterAdded:Connect(function(char)
 end)
 
 --------------------------------------------------
--- NETWORK SYSTEM
+-- NETWORK
 --------------------------------------------------
 local Folder = Instance.new("Folder", Workspace)
 local Part = Instance.new("Part", Folder)
@@ -87,12 +87,14 @@ playSound("2865227271")
 local ScreenGui = Instance.new("ScreenGui")
 ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
 
+-- RGB BORDER FRAME
 local Border = Instance.new("Frame")
 Border.Size = UDim2.new(0,230,0,200)
 Border.Position = UDim2.new(0.5,-115,0.5,-100)
 Border.BorderSizePixel = 0
 Border.Parent = ScreenGui
 
+-- İÇ FRAME
 local MainFrame = Instance.new("Frame")
 MainFrame.Size = UDim2.new(1,-4,1,-4)
 MainFrame.Position = UDim2.new(0,2,0,2)
@@ -100,7 +102,7 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(0,0,0)
 MainFrame.BorderSizePixel = 0
 MainFrame.Parent = Border
 
--- RGB BORDER LOOP
+-- RGB LOOP (SADECE GÖRÜNÜŞ)
 task.spawn(function()
     local h = 0
     while true do
@@ -222,6 +224,7 @@ end
 Workspace.DescendantAdded:Connect(addPart)
 
 RunService.Heartbeat:Connect(function()
+
     if not ringEnabled then return end
     if not humanoidRootPart then return end
 
@@ -242,6 +245,7 @@ RunService.Heartbeat:Connect(function()
             part.Velocity = dir * strength
         end
     end
+
 end)
 
 --------------------------------------------------
@@ -285,6 +289,7 @@ StarterGui:SetCore("SendNotification",{
 -- CHAT
 --------------------------------------------------
 local function SendChatMessage(msg)
+
     if TextChatService.ChatVersion == Enum.ChatVersion.TextChatService then
         TextChatService.TextChannels.RBXGeneral:SendAsync(msg)
     else
@@ -293,4 +298,4 @@ local function SendChatMessage(msg)
     end
 end
 
-SendChatMessage("merte pompa")
+SendChatMessage("ring loaded")
