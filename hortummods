@@ -1,39 +1,11 @@
---[[ 
-    Super Ring Parts V4 - Cleaned & Optimized 
-    Trol mesajlar silindi, Xeno için hazırlandı.
-]]
-
+-- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local UserInputService = game:GetService("UserInputService")
+local TweenService = game:GetService("TweenService")
 local LocalPlayer = Players.LocalPlayer
-local Workspace = game:GetService("Workspace")
 
--- NETWORK OWNERSHIP BYPASS (Parçaları kontrol etmek için şart)
-if not getgenv().Network then
-    getgenv().Network = {
-        BaseParts = {},
-        Velocity = Vector3.new(14.46, 14.46, 14.46)
-    }
-
-    Network.RetainPart = function(Part)
-        if typeof(Part) == "Instance" and Part:IsA("BasePart") and Part:IsDescendantOf(Workspace) then
-            table.insert(Network.BaseParts, Part)
-            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            Part.CanCollide = false
-        end
-    end
-
-    RunService.Heartbeat:Connect(function()
-        sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
-        for _, Part in pairs(Network.BaseParts) do
-            if Part:IsDescendantOf(Workspace) then
-                Part.Velocity = Network.Velocity
-            end
-        end
-    end)
-end
-
--- AYARLAR
+-- Değişkenler (Kodun çalışma mantığı)
 local radius = 50
 local height = 100
 local rotationSpeed = 1
@@ -41,74 +13,164 @@ local attractionStrength = 1000
 local ringPartsEnabled = false
 local parts = {}
 
--- PARÇA TOPLAMA FONKSİYONU
-local function addPart(part)
-    if part:IsA("BasePart") and not part.Anchored and not part:IsDescendantOf(LocalPlayer.Character) then
-        if not table.find(parts, part) then
-            table.insert(parts, part)
-            part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
-            part.CanCollide = false
+-- Network & Physics Logic
+if not getgenv().Network then
+    getgenv().Network = {BaseParts = {}, Velocity = Vector3.new(14.46, 14.46, 14.46)}
+    Network.RetainPart = function(Part)
+        if typeof(Part) == "Instance" and Part:IsA("BasePart") then
+            table.insert(Network.BaseParts, Part)
+            Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+            Part.CanCollide = false
         end
     end
+    RunService.Heartbeat:Connect(function()
+        sethiddenproperty(LocalPlayer, "SimulationRadius", math.huge)
+        for _, Part in pairs(Network.BaseParts) do
+            if Part:IsDescendantOf(workspace) then Part.Velocity = Network.Velocity end
+        end
+    end)
 end
 
-for _, part in pairs(workspace:GetDescendants()) do addPart(part) end
-workspace.DescendantAdded:Connect(addPart)
+-- GUI OLUŞTURMA
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "NovaRingV4"
+ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+ScreenGui.ResetOnSpawn = false
 
--- ARAYÜZ (GUI)
-local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
-local MainFrame = Instance.new("Frame", ScreenGui)
-MainFrame.Size = UDim2.new(0, 220, 0, 150)
-MainFrame.Position = UDim2.new(0.5, -110, 0.5, -75)
-MainFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-MainFrame.Draggable = true
-MainFrame.Active = true
+local MainFrame = Instance.new("Frame")
+MainFrame.Size = UDim2.new(0, 250, 0, 300)
+MainFrame.Position = UDim2.new(0.5, -125, 0.5, -150)
+MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+MainFrame.BorderSizePixel = 0
+MainFrame.Parent = ScreenGui
 
 local UICorner = Instance.new("UICorner", MainFrame)
+UICorner.CornerRadius = UDim.new(0, 15)
 
-local Title = Instance.new("TextLabel", MainFrame)
+local UIStroke = Instance.new("UIStroke", MainFrame)
+UIStroke.Color = Color3.fromRGB(85, 170, 255)
+UIStroke.Thickness = 2
+
+-- Başlık
+local Title = Instance.new("TextLabel")
 Title.Size = UDim2.new(1, 0, 0, 40)
-Title.Text = "Super Ring V4"
-Title.TextColor3 = Color3.new(1, 1, 1)
-Title.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+Title.Text = "NOVA RING V4"
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.BackgroundTransparency = 1
+Title.Font = Enum.Font.GothamBold
+Title.TextSize = 18
+Title.Parent = MainFrame
 
-local ToggleBtn = Instance.new("TextButton", MainFrame)
+-- ON/OFF Butonu
+local ToggleBtn = Instance.new("TextButton")
 ToggleBtn.Size = UDim2.new(0.8, 0, 0, 40)
-ToggleBtn.Position = UDim2.new(0.1, 0, 0.35, 0)
-ToggleBtn.Text = "Hortum: KAPALI"
-ToggleBtn.BackgroundColor3 = Color3.fromRGB(150, 0, 0)
-ToggleBtn.TextColor3 = Color3.new(1, 1, 1)
+ToggleBtn.Position = UDim2.new(0.1, 0, 0.2, 0)
+ToggleBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+ToggleBtn.Text = "DURUM: KAPALI"
+ToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+ToggleBtn.Font = Enum.Font.GothamBold
+ToggleBtn.TextSize = 14
+ToggleBtn.Parent = MainFrame
+Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
 
+-- Kontrol Fonksiyonu Oluşturucu (Radius, Height vb. için)
+local function CreateControl(name, pos, defaultVal, callback)
+    local Label = Instance.new("TextLabel")
+    Label.Size = UDim2.new(0.8, 0, 0, 20)
+    Label.Position = pos
+    Label.Text = name .. ": " .. defaultVal
+    Label.TextColor3 = Color3.fromRGB(200, 200, 200)
+    Label.BackgroundTransparency = 1
+    Label.Font = Enum.Font.Gotham
+    Label.TextSize = 12
+    Label.Parent = MainFrame
+
+    local Box = Instance.new("TextBox")
+    Box.Size = UDim2.new(0.8, 0, 0, 25)
+    Box.Position = pos + UDim2.new(0, 0, 0, 20)
+    Box.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+    Box.Text = tostring(defaultVal)
+    Box.TextColor3 = Color3.fromRGB(255, 255, 255)
+    Box.Font = Enum.Font.Gotham
+    Box.TextSize = 12
+    Box.Parent = MainFrame
+    Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 5)
+
+    Box.FocusLost:Connect(function()
+        local val = tonumber(Box.Text)
+        if val then
+            callback(val)
+            Label.Text = name .. ": " .. val
+        end
+    end)
+end
+
+-- Kontrolleri Ekle
+CreateControl("Menzil (Radius)", UDim2.new(0.1, 0, 0.4, 0), radius, function(v) radius = v end)
+CreateControl("Yükseklik (Height)", UDim2.new(0.1, 0, 0.6, 0), height, function(v) height = v end)
+CreateControl("Dönüş Hızı (Speed)", UDim2.new(0.1, 0, 0.8, 0), rotationSpeed, function(v) rotationSpeed = v end)
+
+-- Toggle Mantığı
 ToggleBtn.MouseButton1Click:Connect(function()
     ringPartsEnabled = not ringPartsEnabled
-    ToggleBtn.Text = ringPartsEnabled and "Hortum: AÇIK" or "Hortum: KAPALI"
-    ToggleBtn.BackgroundColor3 = ringPartsEnabled and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(150, 0, 0)
+    if ringPartsEnabled then
+        ToggleBtn.Text = "DURUM: AKTİF"
+        ToggleBtn.TextColor3 = Color3.fromRGB(80, 255, 80)
+        UIStroke.Color = Color3.fromRGB(80, 255, 80)
+    else
+        ToggleBtn.Text = "DURUM: KAPALI"
+        ToggleBtn.TextColor3 = Color3.fromRGB(255, 80, 80)
+        UIStroke.Color = Color3.fromRGB(85, 170, 255)
+    end
 end)
 
-local RadiusLabel = Instance.new("TextLabel", MainFrame)
-RadiusLabel.Size = UDim2.new(1, 0, 0, 30)
-RadiusLabel.Position = UDim2.new(0, 0, 0.7, 0)
-RadiusLabel.Text = "Mesafe: " .. radius
-RadiusLabel.TextColor3 = Color3.new(1, 1, 1)
-RadiusLabel.BackgroundTransparency = 1
+-- Sürükleme Özelliği
+local dragging, dragInput, dragStart, startPos
+MainFrame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true; dragStart = input.Position; startPos = MainFrame.Position
+        input.Changed:Connect(function() if input.UserInputState == Enum.UserInputState.End then dragging = false end end)
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+        local delta = input.Position - dragStart
+        MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+    end
+end)
 
--- HORTUM MOTORU
+-- ÇEKİRDEK DÖNGÜ (DOKUNMA!)
+local function RetainPart(Part)
+    if Part:IsA("BasePart") and not Part.Anchored and Part:IsDescendantOf(workspace) then
+        if Part.Parent == LocalPlayer.Character or Part:IsDescendantOf(LocalPlayer.Character) then return false end
+        Part.CustomPhysicalProperties = PhysicalProperties.new(0, 0, 0, 0, 0)
+        Part.CanCollide = false
+        return true
+    end
+    return false
+end
+
+workspace.DescendantAdded:Connect(function(p) if RetainPart(p) then table.insert(parts, p) end end)
+for _, p in pairs(workspace:GetDescendants()) do if RetainPart(p) then table.insert(parts, p) end end
+
 RunService.Heartbeat:Connect(function()
     if not ringPartsEnabled then return end
-    local hrp = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-    if hrp then
-        local center = hrp.Position
-        for _, part in pairs(parts) do
+    local root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
+    if root then
+        for i, part in pairs(parts) do
             if part.Parent and not part.Anchored then
                 local pos = part.Position
-                local angle = math.atan2(pos.Z - center.Z, pos.X - center.X)
+                local distance = (Vector3.new(pos.X, root.Position.Y, pos.Z) - root.Position).Magnitude
+                local angle = math.atan2(pos.Z - root.Position.Z, pos.X - root.Position.X)
                 local newAngle = angle + math.rad(rotationSpeed)
                 local targetPos = Vector3.new(
-                    center.X + math.cos(newAngle) * radius,
-                    center.Y + (math.sin(tick()) * 5 + 5),
-                    center.Z + math.sin(newAngle) * radius
+                    root.Position.X + math.cos(newAngle) * math.min(radius, distance),
+                    root.Position.Y + (height * (math.abs(math.sin((pos.Y - root.Position.Y) / height)))),
+                    root.Position.Z + math.sin(newAngle) * math.min(radius, distance)
                 )
                 part.Velocity = (targetPos - part.Position).unit * attractionStrength
+            else
+                table.remove(parts, i)
             end
         end
     end
